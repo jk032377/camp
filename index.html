@@ -1,1 +1,1154 @@
-asdfasdfasdf
+<html lang="zh-TW">
+ <head>
+  <script src="/_sdk/data_sdk.js"></script>
+  <script src="/_sdk/element_sdk.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>專案時間軸管理</title>
+  <script src="/_sdk/data_sdk.js" onerror="this.removeAttribute('src')"></script>
+  <script src="/_sdk/element_sdk.js" onerror="this.removeAttribute('src')"></script>
+  <style>
+    body {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Microsoft JhengHei', 'PingFang TC', Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100%;
+      width: 100%;
+    }
+    
+    .timeline-container {
+      width: 100%;
+      padding: 40px 30px;
+      min-height: 100%;
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+      color: white;
+    }
+    
+    .header h1 {
+      font-size: 48px;
+      margin: 0 0 10px 0;
+      font-weight: 700;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    }
+    
+    .header .year {
+      font-size: 32px;
+      opacity: 0.9;
+      font-weight: 300;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 5px 15px;
+      border-radius: 8px;
+      transition: background 0.3s;
+    }
+    
+    .header .year:hover {
+      background: rgba(255,255,255,0.2);
+    }
+    
+    .year-selector {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      z-index: 2500;
+      min-width: 300px;
+    }
+    
+    .year-selector.active {
+      display: block;
+    }
+    
+    .year-selector h3 {
+      margin: 0 0 20px 0;
+      color: #333;
+      font-size: 20px;
+    }
+    
+    .year-options {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    
+    .year-option {
+      padding: 15px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      text-align: center;
+      cursor: pointer;
+      font-size: 18px;
+      font-weight: 600;
+      transition: all 0.3s;
+    }
+    
+    .year-option:hover {
+      border-color: #667eea;
+      background: #f0f0f0;
+    }
+    
+    .year-option.selected {
+      border-color: #667eea;
+      background: #667eea;
+      color: white;
+    }
+    
+    .timeline-wrapper {
+      background: white;
+      border-radius: 20px;
+      padding: 30px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    
+    .months-header {
+      display: grid;
+      grid-template-columns: 150px repeat(12, 1fr);
+      gap: 5px;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid #e0e0e0;
+    }
+    
+    .month-label {
+      text-align: center;
+      font-weight: 600;
+      font-size: 16px;
+      color: #555;
+      padding: 10px 5px;
+    }
+    
+    .category-label {
+      font-weight: 700;
+      color: #333;
+      padding: 10px;
+      font-size: 15px;
+    }
+    
+    .tasks-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+    
+    .task-row {
+      display: grid;
+      grid-template-columns: 150px repeat(12, 1fr);
+      gap: 5px;
+      align-items: center;
+      min-height: 50px;
+      position: relative;
+    }
+    
+    .task-row.dragging-row {
+      opacity: 0.4;
+    }
+    
+    .task-row.drag-over-row {
+      border-top: 3px solid #667eea;
+      padding-top: 3px;
+    }
+    
+    .task-name {
+      font-weight: 500;
+      color: #333;
+      padding: 10px;
+      font-size: 14px;
+      word-wrap: break-word;
+      cursor: move;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .task-name::before {
+      content: '☰';
+      color: #999;
+      font-size: 16px;
+    }
+    
+    .timeline-grid {
+      display: contents;
+    }
+    
+    .task-bar {
+      height: 40px;
+      border-radius: 8px;
+      cursor: move;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 600;
+      color: white;
+      user-select: none;
+      transition: transform 0.2s, box-shadow 0.2s;
+      position: relative;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    
+    .task-bar:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+    }
+    
+    .task-bar.dragging {
+      opacity: 0.5;
+      cursor: grabbing;
+      z-index: 1000;
+    }
+    
+    .drop-zone {
+      min-height: 40px;
+      transition: background 0.2s;
+    }
+    
+    .drop-zone.drag-over {
+      background: #dbeafe !important;
+      border: 2px dashed #3b82f6;
+      border-radius: 8px;
+    }
+    
+    .controls {
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 2px solid #e0e0e0;
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+    
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    
+    .btn-danger {
+      background: #ef4444;
+      color: white;
+    }
+    
+    .btn-danger:hover {
+      background: #dc2626;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.5);
+      justify-content: center;
+      align-items: center;
+      z-index: 2000;
+    }
+    
+    .modal.active {
+      display: flex;
+    }
+    
+    .modal-content {
+      background: white;
+      padding: 30px;
+      border-radius: 15px;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    
+    .modal-content h2 {
+      margin: 0 0 20px 0;
+      color: #333;
+      font-size: 24px;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      color: #555;
+      font-weight: 600;
+      font-size: 14px;
+    }
+    
+    .form-group input,
+    .form-group select {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 15px;
+      font-family: inherit;
+      transition: border-color 0.3s;
+      box-sizing: border-box;
+    }
+    
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    
+    .color-options {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 10px;
+    }
+    
+    .color-option {
+      width: 100%;
+      aspect-ratio: 1;
+      border-radius: 8px;
+      cursor: pointer;
+      border: 3px solid transparent;
+      transition: all 0.3s;
+    }
+    
+    .color-option:hover {
+      transform: scale(1.1);
+    }
+    
+    .color-option.selected {
+      border-color: #333;
+      transform: scale(1.15);
+    }
+    
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 25px;
+    }
+    
+    .modal-actions .btn {
+      flex: 1;
+    }
+    
+    .loading {
+      display: none;
+      text-align: center;
+      padding: 20px;
+      color: #667eea;
+      font-size: 16px;
+    }
+    
+    .loading.active {
+      display: block;
+    }
+    
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #999;
+    }
+    
+    .empty-state svg {
+      width: 100px;
+      height: 100px;
+      margin-bottom: 20px;
+      opacity: 0.5;
+    }
+    
+    .delete-confirm {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 20px 30px;
+      border-radius: 12px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+      z-index: 3000;
+      display: none;
+    }
+    
+    .delete-confirm.active {
+      display: block;
+    }
+    
+    .delete-confirm p {
+      margin: 0 0 15px 0;
+      font-size: 16px;
+      color: #333;
+    }
+    
+    .delete-confirm-actions {
+      display: flex;
+      gap: 10px;
+    }
+    
+    .offline-notice {
+      background: #fef3c7;
+      color: #92400e;
+      padding: 10px 20px;
+      text-align: center;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 14px;
+    }
+  </style>
+  <style>@view-transition { navigation: auto; }</style>
+  <script src="https://cdn.tailwindcss.com" type="text/javascript"></script>
+ </head>
+ <body>
+  <div class="timeline-container">
+   <div class="header">
+    <h1 id="timeline-title">專案時間軸</h1>
+    <div class="year" id="year-label" onclick="openYearSelector()">
+     2025 ▼
+    </div>
+   </div>
+   <div class="timeline-wrapper">
+    <div id="offline-notice" class="offline-notice" style="display:none;">
+     📱 離線模式：資料儲存在瀏覽器本地，重新整理後會保留
+    </div>
+    <div class="months-header">
+     <div class="category-label">
+      任務名稱
+     </div>
+     <div class="month-label">
+      1月
+     </div>
+     <div class="month-label">
+      2月
+     </div>
+     <div class="month-label">
+      3月
+     </div>
+     <div class="month-label">
+      4月
+     </div>
+     <div class="month-label">
+      5月
+     </div>
+     <div class="month-label">
+      6月
+     </div>
+     <div class="month-label">
+      7月
+     </div>
+     <div class="month-label">
+      8月
+     </div>
+     <div class="month-label">
+      9月
+     </div>
+     <div class="month-label">
+      10月
+     </div>
+     <div class="month-label">
+      11月
+     </div>
+     <div class="month-label">
+      12月
+     </div>
+    </div>
+    <div class="loading" id="loading">
+     載入中...
+    </div>
+    <div class="tasks-grid" id="tasks-grid"></div>
+    <div class="controls"><button class="btn btn-primary" id="add-task-btn">➕ 新增任務</button>
+    </div>
+   </div>
+  </div>
+  <div class="year-selector" id="year-selector">
+   <h3>選擇年份</h3>
+   <div class="year-options" id="year-options"></div>
+   <div class="modal-actions"><button class="btn" onclick="closeYearSelector()" style="background: #6b7280; color: white;">取消</button> <button class="btn btn-primary" onclick="confirmYearSelection()">確認</button>
+   </div>
+  </div>
+  <div class="modal" id="task-modal">
+   <div class="modal-content">
+    <h2 id="modal-title">新增任務</h2>
+    <form id="task-form">
+     <div class="form-group"><label for="task-name-input">任務名稱</label> <input type="text" id="task-name-input" required placeholder="輸入任務名稱">
+     </div>
+     <div class="form-group"><label for="start-month">開始月份</label> <select id="start-month" required> <option value="1">1月</option> <option value="2">2月</option> <option value="3">3月</option> <option value="4">4月</option> <option value="5">5月</option> <option value="6">6月</option> <option value="7">7月</option> <option value="8">8月</option> <option value="9">9月</option> <option value="10">10月</option> <option value="11">11月</option> <option value="12">12月</option> </select>
+     </div>
+     <div class="form-group"><label for="end-month">結束月份</label> <select id="end-month" required> <option value="1">1月</option> <option value="2">2月</option> <option value="3">3月</option> <option value="4">4月</option> <option value="5">5月</option> <option value="6">6月</option> <option value="7">7月</option> <option value="8">8月</option> <option value="9">9月</option> <option value="10">10月</option> <option value="11">11月</option> <option value="12">12月</option> </select>
+     </div>
+     <div class="form-group"><label>選擇顏色</label>
+      <div class="color-options" id="color-options"></div>
+     </div>
+     <div class="form-group"><label for="category-input">類別</label> <input type="text" id="category-input" placeholder="例如：進行中、明年計畫">
+     </div>
+     <div class="modal-actions"><button type="button" class="btn" onclick="closeModal()" style="background: #6b7280; color: white;">取消</button> <button type="submit" class="btn btn-primary">儲存</button>
+     </div>
+    </form>
+   </div>
+  </div>
+  <div class="delete-confirm" id="delete-confirm">
+   <p>確定要刪除這個任務嗎？</p>
+   <div class="delete-confirm-actions"><button class="btn" id="cancel-delete" style="background: #6b7280; color: white;">取消</button> <button class="btn btn-danger" id="confirm-delete">刪除</button>
+   </div>
+  </div>
+  <script>
+    const defaultConfig = {
+      timeline_title: '專案時間軸',
+      year_label: '2025'
+    };
+    
+    const colors = [
+      '#ef4444', '#f97316', '#eab308', '#84cc16', 
+      '#10b981', '#06b6d4', '#3b82f6', '#8b5cf6', 
+      '#ec4899', '#f43f5e', '#64748b', '#78716c'
+    ];
+    
+    let selectedColor = colors[0];
+    let currentTasks = [];
+    let draggedTask = null;
+    let draggedRowIndex = null;
+    let taskToDelete = null;
+    let selectedYear = null;
+    let isOfflineMode = false;
+    
+    // 離線模式的 localStorage 操作
+    function saveTasksOffline(tasks) {
+      try {
+        localStorage.setItem('timeline_tasks', JSON.stringify(tasks));
+      } catch (e) {
+        console.error('無法儲存到 localStorage', e);
+      }
+    }
+    
+    function loadTasksOffline() {
+      try {
+        const data = localStorage.getItem('timeline_tasks');
+        return data ? JSON.parse(data) : [];
+      } catch (e) {
+        console.error('無法從 localStorage 載入', e);
+        return [];
+      }
+    }
+    
+    function renderColorOptions() {
+      const container = document.getElementById('color-options');
+      container.innerHTML = colors.map((color, index) => 
+        `<div class="color-option ${index === 0 ? 'selected' : ''}" 
+              style="background: ${color}" 
+              onclick="selectColor('${color}', this)"></div>`
+      ).join('');
+    }
+    
+    function selectColor(color, element) {
+      selectedColor = color;
+      document.querySelectorAll('.color-option').forEach(opt => 
+        opt.classList.remove('selected')
+      );
+      element.classList.add('selected');
+    }
+    
+    function openYearSelector() {
+      const yearSelector = document.getElementById('year-selector');
+      const yearOptions = document.getElementById('year-options');
+      
+      let currentYear = 2025;
+      if (window.elementSdk && window.elementSdk.config) {
+        currentYear = parseInt(window.elementSdk.config.year_label || defaultConfig.year_label);
+      } else {
+        const yearText = document.getElementById('year-label').textContent;
+        currentYear = parseInt(yearText) || 2025;
+      }
+      
+      const years = [];
+      for (let i = currentYear - 2; i <= currentYear + 5; i++) {
+        years.push(i);
+      }
+      
+      yearOptions.innerHTML = years.map(year => 
+        `<div class="year-option ${year === currentYear ? 'selected' : ''}" 
+              onclick="selectYear(${year}, this)">${year}</div>`
+      ).join('');
+      
+      selectedYear = currentYear;
+      yearSelector.classList.add('active');
+    }
+    
+    function closeYearSelector() {
+      document.getElementById('year-selector').classList.remove('active');
+    }
+    
+    function selectYear(year, element) {
+      selectedYear = year;
+      document.querySelectorAll('.year-option').forEach(opt => 
+        opt.classList.remove('selected')
+      );
+      element.classList.add('selected');
+    }
+    
+    async function confirmYearSelection() {
+      if (selectedYear) {
+        if (window.elementSdk) {
+          await window.elementSdk.setConfig({ year_label: selectedYear.toString() });
+        } else {
+          // 離線模式
+          document.getElementById('year-label').textContent = selectedYear + ' ▼';
+        }
+      }
+      closeYearSelector();
+    }
+    
+    function openModal(task = null) {
+      const modal = document.getElementById('task-modal');
+      const form = document.getElementById('task-form');
+      const modalTitle = document.getElementById('modal-title');
+      
+      if (task) {
+        modalTitle.textContent = '編輯任務';
+        document.getElementById('task-name-input').value = task.task_name;
+        document.getElementById('start-month').value = task.start_month;
+        document.getElementById('end-month').value = task.end_month;
+        document.getElementById('category-input').value = task.category || '';
+        selectedColor = task.color;
+        
+        document.querySelectorAll('.color-option').forEach((opt, index) => {
+          opt.classList.toggle('selected', colors[index] === task.color);
+        });
+        
+        form.onsubmit = (e) => handleEditTask(e, task);
+      } else {
+        modalTitle.textContent = '新增任務';
+        form.reset();
+        selectedColor = colors[0];
+        renderColorOptions();
+        form.onsubmit = handleAddTask;
+      }
+      
+      modal.classList.add('active');
+    }
+    
+    function closeModal() {
+      document.getElementById('task-modal').classList.remove('active');
+    }
+    
+    async function handleAddTask(e) {
+      e.preventDefault();
+      
+      const taskName = document.getElementById('task-name-input').value;
+      const startMonth = parseInt(document.getElementById('start-month').value);
+      const endMonth = parseInt(document.getElementById('end-month').value);
+      const category = document.getElementById('category-input').value;
+      
+      if (startMonth > endMonth) {
+        showToast('開始月份不能大於結束月份');
+        return;
+      }
+      
+      const loading = document.getElementById('loading');
+      loading.classList.add('active');
+      
+      const maxOrder = currentTasks.length > 0 
+        ? Math.max(...currentTasks.map(t => t.display_order || 0))
+        : 0;
+      
+      if (window.dataSdk && !isOfflineMode) {
+        const result = await window.dataSdk.create({
+          task_name: taskName,
+          start_month: startMonth,
+          end_month: endMonth,
+          color: selectedColor,
+          category: category,
+          display_order: maxOrder + 1
+        });
+        
+        loading.classList.remove('active');
+        
+        if (result.isOk) {
+          closeModal();
+          showToast('任務已新增');
+        } else {
+          showToast('新增失敗，請重試');
+        }
+      } else {
+        // 離線模式
+        const newTask = {
+          task_name: taskName,
+          start_month: startMonth,
+          end_month: endMonth,
+          color: selectedColor,
+          category: category,
+          display_order: maxOrder + 1,
+          __backendId: 'local_' + Date.now()
+        };
+        currentTasks.push(newTask);
+        saveTasksOffline(currentTasks);
+        renderTasks(currentTasks);
+        loading.classList.remove('active');
+        closeModal();
+        showToast('任務已新增');
+      }
+    }
+    
+    async function handleEditTask(e, task) {
+      e.preventDefault();
+      
+      const taskName = document.getElementById('task-name-input').value;
+      const startMonth = parseInt(document.getElementById('start-month').value);
+      const endMonth = parseInt(document.getElementById('end-month').value);
+      const category = document.getElementById('category-input').value;
+      
+      if (startMonth > endMonth) {
+        showToast('開始月份不能大於結束月份');
+        return;
+      }
+      
+      const loading = document.getElementById('loading');
+      loading.classList.add('active');
+      
+      if (window.dataSdk && !isOfflineMode) {
+        const result = await window.dataSdk.update({
+          ...task,
+          task_name: taskName,
+          start_month: startMonth,
+          end_month: endMonth,
+          color: selectedColor,
+          category: category
+        });
+        
+        loading.classList.remove('active');
+        
+        if (result.isOk) {
+          closeModal();
+          showToast('任務已更新');
+        } else {
+          showToast('更新失敗，請重試');
+        }
+      } else {
+        // 離線模式
+        const index = currentTasks.findIndex(t => t.__backendId === task.__backendId);
+        if (index !== -1) {
+          currentTasks[index] = {
+            ...task,
+            task_name: taskName,
+            start_month: startMonth,
+            end_month: endMonth,
+            color: selectedColor,
+            category: category
+          };
+          saveTasksOffline(currentTasks);
+          renderTasks(currentTasks);
+        }
+        loading.classList.remove('active');
+        closeModal();
+        showToast('任務已更新');
+      }
+    }
+    
+    function showDeleteConfirm(task) {
+      taskToDelete = task;
+      const confirmDialog = document.getElementById('delete-confirm');
+      confirmDialog.classList.add('active');
+    }
+    
+    function hideDeleteConfirm() {
+      taskToDelete = null;
+      const confirmDialog = document.getElementById('delete-confirm');
+      confirmDialog.classList.remove('active');
+    }
+    
+    async function confirmDelete() {
+      if (!taskToDelete) return;
+      
+      const loading = document.getElementById('loading');
+      loading.classList.add('active');
+      
+      if (window.dataSdk && !isOfflineMode) {
+        const result = await window.dataSdk.delete(taskToDelete);
+        
+        loading.classList.remove('active');
+        hideDeleteConfirm();
+        
+        if (result.isOk) {
+          showToast('任務已刪除');
+        } else {
+          showToast('刪除失敗，請重試');
+        }
+      } else {
+        // 離線模式
+        const index = currentTasks.findIndex(t => t.__backendId === taskToDelete.__backendId);
+        if (index !== -1) {
+          currentTasks.splice(index, 1);
+          saveTasksOffline(currentTasks);
+          renderTasks(currentTasks);
+        }
+        loading.classList.remove('active');
+        hideDeleteConfirm();
+        showToast('任務已刪除');
+      }
+    }
+    
+    function showToast(message) {
+      const toast = document.createElement('div');
+      toast.textContent = message;
+      toast.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #333;
+        color: white;
+        padding: 15px 25px;
+        border-radius: 8px;
+        font-size: 14px;
+        z-index: 3000;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+      `;
+      document.body.appendChild(toast);
+      setTimeout(() => toast.remove(), 3000);
+    }
+    
+    function renderTasks(tasks) {
+      const grid = document.getElementById('tasks-grid');
+      
+      if (tasks.length === 0) {
+        grid.innerHTML = `
+          <div class="empty-state">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <p>尚無任務，點擊「新增任務」開始建立你的時間軸</p>
+          </div>
+        `;
+        return;
+      }
+      
+      grid.innerHTML = '';
+      
+      tasks.forEach((task, rowIndex) => {
+        const span = task.end_month - task.start_month + 1;
+        
+        const taskRow = document.createElement('div');
+        taskRow.className = 'task-row';
+        taskRow.setAttribute('data-row-index', rowIndex);
+        taskRow.setAttribute('draggable', 'true');
+        
+        // 整列拖曳事件
+        taskRow.addEventListener('dragstart', (e) => {
+          draggedRowIndex = rowIndex;
+          taskRow.classList.add('dragging-row');
+          e.dataTransfer.effectAllowed = 'move';
+        });
+        
+        taskRow.addEventListener('dragend', (e) => {
+          taskRow.classList.remove('dragging-row');
+          document.querySelectorAll('.task-row').forEach(row => {
+            row.classList.remove('drag-over-row');
+          });
+          draggedRowIndex = null;
+        });
+        
+        taskRow.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          if (draggedRowIndex !== null && draggedRowIndex !== rowIndex) {
+            taskRow.classList.add('drag-over-row');
+          }
+        });
+        
+        taskRow.addEventListener('dragleave', (e) => {
+          taskRow.classList.remove('drag-over-row');
+        });
+        
+        taskRow.addEventListener('drop', async (e) => {
+          e.preventDefault();
+          taskRow.classList.remove('drag-over-row');
+          
+          if (draggedRowIndex !== null && draggedRowIndex !== rowIndex) {
+            await reorderTasks(draggedRowIndex, rowIndex);
+          }
+        });
+        
+        const taskNameDiv = document.createElement('div');
+        taskNameDiv.className = 'task-name';
+        taskNameDiv.innerHTML = `<span>${task.task_name}${task.category ? `<br><small style="color: #999;">${task.category}</small>` : ''}</span>`;
+        taskRow.appendChild(taskNameDiv);
+        
+        const timelineGrid = document.createElement('div');
+        timelineGrid.className = 'timeline-grid';
+        
+        for (let i = 0; i < 12; i++) {
+          const month = i + 1;
+          const cell = document.createElement('div');
+          
+          if (month >= task.start_month && month <= task.end_month) {
+            if (month === task.start_month) {
+              cell.className = 'task-bar';
+              cell.setAttribute('data-task-id', task.__backendId);
+              cell.setAttribute('draggable', 'true');
+              cell.style.background = task.color;
+              cell.style.gridColumn = `span ${span}`;
+              cell.textContent = `${task.start_month}月 - ${task.end_month}月`;
+              
+              // 阻止冒泡到row的拖曳
+              cell.addEventListener('dragstart', (e) => {
+                e.stopPropagation();
+                draggedTask = task;
+                cell.classList.add('dragging');
+                e.dataTransfer.effectAllowed = 'move';
+              });
+              
+              cell.addEventListener('dragend', (e) => {
+                e.stopPropagation();
+                cell.classList.remove('dragging');
+                document.querySelectorAll('.drop-zone').forEach(zone => {
+                  zone.classList.remove('drag-over');
+                });
+              });
+              
+              // 單擊編輯
+              let clickTimer = null;
+              cell.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (clickTimer) {
+                  clearTimeout(clickTimer);
+                  clickTimer = null;
+                  return;
+                }
+                clickTimer = setTimeout(() => {
+                  openModal(task);
+                  clickTimer = null;
+                }, 300);
+              });
+              
+              // 雙擊刪除
+              cell.addEventListener('dblclick', (e) => {
+                e.stopPropagation();
+                if (clickTimer) {
+                  clearTimeout(clickTimer);
+                  clickTimer = null;
+                }
+                showDeleteConfirm(task);
+              });
+              
+              timelineGrid.appendChild(cell);
+            }
+          } else {
+            cell.className = 'drop-zone';
+            cell.setAttribute('data-month', month);
+            
+            // 拖曳經過
+            cell.addEventListener('dragover', (e) => {
+              if (draggedTask) {
+                e.preventDefault();
+                e.stopPropagation();
+                e.dataTransfer.dropEffect = 'move';
+                cell.classList.add('drag-over');
+              }
+            });
+            
+            // 拖曳離開
+            cell.addEventListener('dragleave', (e) => {
+              cell.classList.remove('drag-over');
+            });
+            
+            // 放下
+            cell.addEventListener('drop', async (e) => {
+              if (draggedTask) {
+                e.preventDefault();
+                e.stopPropagation();
+                cell.classList.remove('drag-over');
+                
+                const targetMonth = parseInt(cell.getAttribute('data-month'));
+                const duration = draggedTask.end_month - draggedTask.start_month;
+                const newStartMonth = targetMonth;
+                const newEndMonth = newStartMonth + duration;
+                
+                if (newEndMonth > 12) {
+                  showToast('無法移動：結束月份超過12月');
+                  return;
+                }
+                
+                const loading = document.getElementById('loading');
+                loading.classList.add('active');
+                
+                if (window.dataSdk && !isOfflineMode) {
+                  const result = await window.dataSdk.update({
+                    ...draggedTask,
+                    start_month: newStartMonth,
+                    end_month: newEndMonth
+                  });
+                  
+                  loading.classList.remove('active');
+                  
+                  if (result.isOk) {
+                    showToast('任務時間已更新');
+                  } else {
+                    showToast('更新失敗，請重試');
+                  }
+                } else {
+                  // 離線模式
+                  const index = currentTasks.findIndex(t => t.__backendId === draggedTask.__backendId);
+                  if (index !== -1) {
+                    currentTasks[index] = {
+                      ...draggedTask,
+                      start_month: newStartMonth,
+                      end_month: newEndMonth
+                    };
+                    saveTasksOffline(currentTasks);
+                    renderTasks(currentTasks);
+                  }
+                  loading.classList.remove('active');
+                  showToast('任務時間已更新');
+                }
+                
+                draggedTask = null;
+              }
+            });
+            
+            timelineGrid.appendChild(cell);
+          }
+        }
+        
+        taskRow.appendChild(timelineGrid);
+        grid.appendChild(taskRow);
+      });
+    }
+    
+    async function reorderTasks(fromIndex, toIndex) {
+      const loading = document.getElementById('loading');
+      loading.classList.add('active');
+      
+      const reorderedTasks = [...currentTasks];
+      const [movedTask] = reorderedTasks.splice(fromIndex, 1);
+      reorderedTasks.splice(toIndex, 0, movedTask);
+      
+      if (window.dataSdk && !isOfflineMode) {
+        // 更新所有任務的display_order
+        for (let i = 0; i < reorderedTasks.length; i++) {
+          const task = reorderedTasks[i];
+          await window.dataSdk.update({
+            ...task,
+            display_order: i
+          });
+        }
+      } else {
+        // 離線模式
+        for (let i = 0; i < reorderedTasks.length; i++) {
+          reorderedTasks[i].display_order = i;
+        }
+        currentTasks = reorderedTasks;
+        saveTasksOffline(currentTasks);
+        renderTasks(currentTasks);
+      }
+      
+      loading.classList.remove('active');
+      showToast('順序已調整');
+    }
+    
+    const dataHandler = {
+      onDataChanged(data) {
+        currentTasks = data.sort((a, b) => {
+          const orderA = a.display_order !== undefined ? a.display_order : 999999;
+          const orderB = b.display_order !== undefined ? b.display_order : 999999;
+          if (orderA !== orderB) {
+            return orderA - orderB;
+          }
+          return a.start_month - b.start_month;
+        });
+        renderTasks(currentTasks);
+      }
+    };
+    
+    async function onConfigChange(config) {
+      const titleElement = document.getElementById('timeline-title');
+      const yearElement = document.getElementById('year-label');
+      
+      titleElement.textContent = config.timeline_title || defaultConfig.timeline_title;
+      yearElement.textContent = (config.year_label || defaultConfig.year_label) + ' ▼';
+    }
+    
+    async function init() {
+      // 檢查是否為離線模式
+      if (!window.dataSdk) {
+        isOfflineMode = true;
+        document.getElementById('offline-notice').style.display = 'block';
+        // 載入離線資料
+        currentTasks = loadTasksOffline();
+        renderTasks(currentTasks);
+      } else {
+        const result = await window.dataSdk.init(dataHandler);
+        if (!result.isOk) {
+          isOfflineMode = true;
+          document.getElementById('offline-notice').style.display = 'block';
+          currentTasks = loadTasksOffline();
+          renderTasks(currentTasks);
+        }
+      }
+      
+      if (window.elementSdk) {
+        window.elementSdk.init({
+          defaultConfig,
+          onConfigChange,
+          mapToCapabilities: (config) => ({
+            recolorables: [],
+            borderables: [],
+            fontEditable: undefined,
+            fontSizeable: undefined
+          }),
+          mapToEditPanelValues: (config) => new Map([
+            ['timeline_title', config.timeline_title || defaultConfig.timeline_title],
+            ['year_label', config.year_label || defaultConfig.year_label]
+          ])
+        });
+      }
+      
+      renderColorOptions();
+      
+      document.getElementById('add-task-btn').addEventListener('click', () => openModal());
+      
+      document.getElementById('task-modal').addEventListener('click', (e) => {
+        if (e.target.id === 'task-modal') {
+          closeModal();
+        }
+      });
+      
+      document.getElementById('cancel-delete').addEventListener('click', hideDeleteConfirm);
+      document.getElementById('confirm-delete').addEventListener('click', confirmDelete);
+    }
+    
+    // 確保頁面載入完成後執行
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9a81aed09611a9af',t:'MTc2NDc1MDQyNi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
