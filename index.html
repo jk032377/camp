@@ -133,6 +133,15 @@
       font-size: 16px;
       color: #555;
       padding: 10px 5px;
+      border-right: 1px solid #e8e8e8;
+    }
+    
+    .month-label:nth-child(7) {
+      border-right: 2px solid #d0d0d0;
+    }
+    
+    .month-label:last-child {
+      border-right: none;
     }
     
     .category-label {
@@ -218,6 +227,15 @@
     .drop-zone {
       min-height: 40px;
       transition: background 0.2s;
+      border-right: 1px solid #f0f0f0;
+    }
+    
+    .drop-zone:nth-child(7) {
+      border-right: 2px solid #d0d0d0;
+    }
+    
+    .drop-zone:last-child {
+      border-right: none;
     }
     
     .drop-zone.drag-over {
@@ -427,6 +445,16 @@
       margin-bottom: 20px;
       font-size: 14px;
     }
+    
+    .usage-hint {
+      background: #f0f9ff;
+      color: #0c4a6e;
+      padding: 12px 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 13px;
+      line-height: 1.6;
+    }
   </style>
   <style>@view-transition { navigation: auto; }</style>
   <script src="https://cdn.tailwindcss.com" type="text/javascript"></script>
@@ -434,14 +462,17 @@
  <body>
   <div class="timeline-container">
    <div class="header">
-    <h1 id="timeline-title">專案時間軸</h1>
+    <h1 id="timeline-title">專案時��軸</h1>
     <div class="year" id="year-label" onclick="openYearSelector()">
      2025 ▼
     </div>
    </div>
    <div class="timeline-wrapper">
     <div id="offline-notice" class="offline-notice" style="display:none;">
-     📱 離線模式：資料儲存在瀏覽器本地，重新整理後會保留
+     📱 離線��式：資料儲存在瀏覽器���地，重新��理後會��留
+    </div>
+    <div class="usage-hint">
+     💡 <strong>使用提示：</strong>點擊任務條可編輯，點擊兩下可刪除 | 拖曳任務條可調整時間 | 拖曳任務列可調整順序
     </div>
     <div class="months-header">
      <div class="category-label">
@@ -519,7 +550,7 @@
    </div>
   </div>
   <div class="delete-confirm" id="delete-confirm">
-   <p>確定��刪除這個任務嗎？</p>
+   <p>確�����刪除這個任務嗎？</p>
    <div class="delete-confirm-actions"><button class="btn" id="cancel-delete" style="background: #6b7280; color: white;">取消</button> <button class="btn btn-danger" id="confirm-delete">刪除</button>
    </div>
   </div>
@@ -533,7 +564,7 @@
     </div>
     <div id="download-loading" style="display: none; text-align: center; margin-top: 20px; color: #667eea;">
      <div style="font-size: 16px;">
-      ⏳ 產生中，請稍候...
+      ⏳ 產��中，請���候...
      </div>
     </div>
    </div>
@@ -545,9 +576,9 @@
     };
     
     const colors = [
-      '#ef4444', '#f97316', '#eab308', '#84cc16', 
+      '#dc2626', '#f97316', '#eab308', '#84cc16', 
       '#10b981', '#06b6d4', '#3b82f6', '#8b5cf6', 
-      '#ec4899', '#f43f5e', '#64748b', '#78716c'
+      '#ec4899', '#fb7185', '#64748b', '#78716c'
     ];
     
     let selectedColor = colors[0];
@@ -637,7 +668,7 @@
         if (window.elementSdk) {
           await window.elementSdk.setConfig({ year_label: selectedYear.toString() });
         } else {
-          // 離線模式
+          // 離���模���
           document.getElementById('year-label').textContent = selectedYear + ' ▼';
         }
       }
@@ -706,7 +737,7 @@
         
         // 等待 html2canvas 載入
         if (typeof html2canvas === 'undefined') {
-          showToast('圖片功能載入中，請稍後再試');
+          showToast('圖片功能載入中，請��後再試');
           loadingEl.style.display = 'none';
           controls.style.display = originalControlsDisplay;
           offlineNotice.style.display = originalNoticeDisplay;
@@ -727,8 +758,14 @@
         
         // 下載圖片
         const imgData = canvas.toDataURL('image/png');
-        const titleText = document.getElementById('timeline-title').textContent;
-        const yearText = document.getElementById('year-label').textContent.replace(' ▼', '');
+        let titleText = document.getElementById('timeline-title').textContent || '時間軸';
+        let yearText = document.getElementById('year-label').textContent.replace(' ▼', '').trim() || '2025';
+        
+        // 如果使用 SDK config
+        if (window.elementSdk && window.elementSdk.config) {
+          titleText = window.elementSdk.config.timeline_title || titleText;
+          yearText = window.elementSdk.config.year_label || yearText;
+        }
         
         const link = document.createElement('a');
         link.href = imgData;
@@ -744,7 +781,7 @@
         showToast('下載失敗：' + error.message);
         loadingEl.style.display = 'none';
         
-        // 還原顯示（錯誤情況）
+        // 還原顯����（錯誤��況）
         const controls = document.querySelector('.controls');
         const offlineNotice = document.getElementById('offline-notice');
         if (controls) controls.style.display = '';
@@ -787,11 +824,11 @@
         controls.style.display = originalControlsDisplay;
         offlineNotice.style.display = originalNoticeDisplay;
         
-        // 建立 PDF
+        // 建��� PDF
         const { jsPDF } = jspdf;
         const imgData = canvas.toDataURL('image/png');
         
-        // 計算 PDF 尺寸（A4 橫向）
+        // 計��� PDF 尺寸（A4 橫向）
         const pdf = new jsPDF('landscape', 'mm', 'a4');
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfHeight = pdf.internal.pageSize.getHeight();
@@ -806,8 +843,15 @@
         pdf.addImage(imgData, 'PNG', imgX, imgY, imgWidth * ratio, imgHeight * ratio);
         
         // 下載 PDF
-        const titleText = document.getElementById('timeline-title').textContent;
-        const yearText = document.getElementById('year-label').textContent.replace(' ▼', '');
+        let titleText = document.getElementById('timeline-title').textContent || '時間軸';
+        let yearText = document.getElementById('year-label').textContent.replace(' ▼', '').trim() || '2025';
+        
+        // 如果使用 SDK config
+        if (window.elementSdk && window.elementSdk.config) {
+          titleText = window.elementSdk.config.timeline_title || titleText;
+          yearText = window.elementSdk.config.year_label || yearText;
+        }
+        
         pdf.save(`${titleText}_${yearText}.pdf`);
         
         showToast('PDF 已下載！');
@@ -913,7 +957,7 @@
         
         if (result.isOk) {
           closeModal();
-          showToast('任務已更新');
+          showToast('任務已更���');
         } else {
           showToast('更新失敗，請重試');
         }
@@ -977,7 +1021,7 @@
         }
         loading.classList.remove('active');
         hideDeleteConfirm();
-        showToast('任務已刪除');
+        showToast('任���已刪除');
       }
     }
     
@@ -1079,7 +1123,34 @@
               cell.setAttribute('draggable', 'true');
               cell.style.background = task.color;
               cell.style.gridColumn = `span ${span}`;
-              cell.textContent = `${task.start_month}月 - ${task.end_month}月`;
+              
+              // 建立內部容器來顯示月份分隔線
+              const innerContainer = document.createElement('div');
+              innerContainer.style.cssText = 'position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;';
+              innerContainer.textContent = `${task.start_month}月 - ${task.end_month}月`;
+              
+              // 畫出每個月的分隔線
+              if (span > 1) {
+                for (let m = 1; m < span; m++) {
+                  const currentMonth = task.start_month + m - 1; // 分隔線左側的月份
+                  const nextMonth = task.start_month + m; // 分隔線右側的月份
+                  const divider = document.createElement('div');
+                  const leftPercent = (m / span) * 100;
+                  // 只有當分隔線是6月和7月之間時才顯示粗線
+                  const isJunJulBorder = (currentMonth === 6 && nextMonth === 7);
+                  divider.style.cssText = `
+                    position: absolute;
+                    left: ${leftPercent}%;
+                    top: 0;
+                    bottom: 0;
+                    width: ${isJunJulBorder ? '2px' : '1px'};
+                    background: rgba(255,255,255,0.3);
+                  `;
+                  innerContainer.appendChild(divider);
+                }
+              }
+              
+              cell.appendChild(innerContainer);
               
               // 阻止冒泡到row的拖曳
               cell.addEventListener('dragstart', (e) => {
@@ -1156,7 +1227,7 @@
                 const newEndMonth = newStartMonth + duration;
                 
                 if (newEndMonth > 12) {
-                  showToast('無法移動：結束月份超過12月');
+                  showToast('���法移動：結��月份超過12月');
                   return;
                 }
                 
@@ -1175,7 +1246,7 @@
                   if (result.isOk) {
                     showToast('任務時間已更新');
                   } else {
-                    showToast('更新失敗，請重試');
+                    showToast('更新失敗，請重��');
                   }
                 } else {
                   // 離線模式
@@ -1264,7 +1335,7 @@
       if (!window.dataSdk) {
         isOfflineMode = true;
         document.getElementById('offline-notice').style.display = 'block';
-        // 載入離線資料
+        // ���入離線資��
         currentTasks = loadTasksOffline();
         renderTasks(currentTasks);
       } else {
@@ -1324,5 +1395,5 @@
       init();
     }
   </script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9a88634be0614a46',t:'MTc2NDgyMDczMy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9a8907d8d63d4a46',t:'MTc2NDgyNzQ3My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
