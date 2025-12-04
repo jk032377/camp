@@ -136,10 +136,6 @@
       border-right: 1px solid #e8e8e8;
     }
     
-    .month-label:nth-child(7) {
-      border-right: 2px solid #d0d0d0;
-    }
-    
     .month-label:last-child {
       border-right: none;
     }
@@ -228,10 +224,6 @@
       min-height: 40px;
       transition: background 0.2s;
       border-right: 1px solid #f0f0f0;
-    }
-    
-    .drop-zone:nth-child(7) {
-      border-right: 2px solid #d0d0d0;
     }
     
     .drop-zone:last-child {
@@ -516,7 +508,7 @@
      </div>
     </div>
     <div class="loading" id="loading">
-     載入中...
+     ��入中...
     </div>
     <div class="tasks-grid" id="tasks-grid"></div>
     <div class="controls"><button class="btn btn-primary" id="add-task-btn">➕ 新增任務</button> <button class="btn" id="share-btn" style="background: #10b981; color: white;">📤 分享時間軸</button>
@@ -533,16 +525,16 @@
    <div class="modal-content">
     <h2 id="modal-title">新增任務</h2>
     <form id="task-form">
-     <div class="form-group"><label for="task-name-input">任務名稱</label> <input type="text" id="task-name-input" required placeholder="輸入任務名稱">
+     <div class="form-group"><label for="task-name-input">��務名稱</label> <input type="text" id="task-name-input" required placeholder="輸入任務名稱">
      </div>
      <div class="form-group"><label for="start-month">開始月份</label> <select id="start-month" required> <option value="1">1月</option> <option value="2">2月</option> <option value="3">3月</option> <option value="4">4月</option> <option value="5">5月</option> <option value="6">6月</option> <option value="7">7月</option> <option value="8">8月</option> <option value="9">9月</option> <option value="10">10月</option> <option value="11">11月</option> <option value="12">12月</option> </select>
      </div>
-     <div class="form-group"><label for="end-month">結束月份</label> <select id="end-month" required> <option value="1">1月</option> <option value="2">2月</option> <option value="3">3月</option> <option value="4">4月</option> <option value="5">5月</option> <option value="6">6月</option> <option value="7">7月</option> <option value="8">8月</option> <option value="9">9月</option> <option value="10">10月</option> <option value="11">11月</option> <option value="12">12月</option> </select>
+     <div class="form-group"><label for="end-month">結束月份</label> <select id="end-month" required> <option value="1">1月</option> <option value="2">2月</option> <option value="3">3�����</option> <option value="4">4月</option> <option value="5">5月</option> <option value="6">6月</option> <option value="7">7月</option> <option value="8">8月</option> <option value="9">9月</option> <option value="10">10月</option> <option value="11">11月</option> <option value="12">12月</option> </select>
      </div>
      <div class="form-group"><label>選擇顏色</label>
       <div class="color-options" id="color-options"></div>
      </div>
-     <div class="form-group"><label for="category-input">類別</label> <input type="text" id="category-input" placeholder="例如：進行中、明年計畫">
+     <div class="form-group"><label for="category-input">類別</label> <input type="text" id="category-input" placeholder="�����：進行中、明��計畫">
      </div>
      <div class="modal-actions"><button type="button" class="btn" onclick="closeModal()" style="background: #6b7280; color: white;">取消</button> <button type="submit" class="btn btn-primary">儲存</button>
      </div>
@@ -726,7 +718,7 @@
       loadingEl.style.display = 'block';
       
       try {
-        // 暫時隱藏控制按鈕和離線提示
+        // ���時��藏控制按鈕和離線提示
         const controls = document.querySelector('.controls');
         const offlineNotice = document.getElementById('offline-notice');
         const originalControlsDisplay = controls.style.display;
@@ -741,12 +733,14 @@
           loadingEl.style.display = 'none';
           controls.style.display = originalControlsDisplay;
           offlineNotice.style.display = originalNoticeDisplay;
+          usageHint.style.display = originalHintDisplay;
           return;
         }
         
-        const timelineWrapper = document.querySelector('.timeline-wrapper');
-        const canvas = await html2canvas(timelineWrapper, {
-          backgroundColor: '#ffffff',
+        // 截取整個容器（包含標題）
+        const timelineContainer = document.querySelector('.timeline-container');
+        const canvas = await html2canvas(timelineContainer, {
+          backgroundColor: 'transparent',
           scale: 2,
           logging: false,
           useCORS: true
@@ -755,6 +749,7 @@
         // 還原顯示
         controls.style.display = originalControlsDisplay;
         offlineNotice.style.display = originalNoticeDisplay;
+        usageHint.style.display = originalHintDisplay;
         
         // 下載圖片
         const imgData = canvas.toDataURL('image/png');
@@ -781,11 +776,13 @@
         showToast('下載失敗：' + error.message);
         loadingEl.style.display = 'none';
         
-        // 還原顯����（錯誤��況）
+        // 還原顯示（錯誤情況）
         const controls = document.querySelector('.controls');
         const offlineNotice = document.getElementById('offline-notice');
+        const usageHint = document.querySelector('.usage-hint');
         if (controls) controls.style.display = '';
         if (offlineNotice) offlineNotice.style.display = '';
+        if (usageHint) usageHint.style.display = '';
       }
     }
     
@@ -794,14 +791,17 @@
       loadingEl.style.display = 'block';
       
       try {
-        // 暫時隱藏控制按鈕和離線提示
+        // 暫時隱藏控制按鈕、離線提示和使用提示
         const controls = document.querySelector('.controls');
         const offlineNotice = document.getElementById('offline-notice');
+        const usageHint = document.querySelector('.usage-hint');
         const originalControlsDisplay = controls.style.display;
         const originalNoticeDisplay = offlineNotice.style.display;
+        const originalHintDisplay = usageHint.style.display;
         
         controls.style.display = 'none';
         offlineNotice.style.display = 'none';
+        usageHint.style.display = 'none';
         
         // 等待函式庫載入
         if (typeof html2canvas === 'undefined' || typeof jspdf === 'undefined') {
@@ -809,12 +809,14 @@
           loadingEl.style.display = 'none';
           controls.style.display = originalControlsDisplay;
           offlineNotice.style.display = originalNoticeDisplay;
+          usageHint.style.display = originalHintDisplay;
           return;
         }
         
-        const timelineWrapper = document.querySelector('.timeline-wrapper');
-        const canvas = await html2canvas(timelineWrapper, {
-          backgroundColor: '#ffffff',
+        // 截取整個容器（包含標題）
+        const timelineContainer = document.querySelector('.timeline-container');
+        const canvas = await html2canvas(timelineContainer, {
+          backgroundColor: 'transparent',
           scale: 2,
           logging: false,
           useCORS: true
@@ -823,6 +825,7 @@
         // 還原顯示
         controls.style.display = originalControlsDisplay;
         offlineNotice.style.display = originalNoticeDisplay;
+        usageHint.style.display = originalHintDisplay;
         
         // 建��� PDF
         const { jsPDF } = jspdf;
@@ -864,8 +867,10 @@
         // 還原顯示（錯誤情況）
         const controls = document.querySelector('.controls');
         const offlineNotice = document.getElementById('offline-notice');
+        const usageHint = document.querySelector('.usage-hint');
         if (controls) controls.style.display = '';
         if (offlineNotice) offlineNotice.style.display = '';
+        if (usageHint) usageHint.style.display = '';
       }
     }
     
@@ -1129,21 +1134,17 @@
               innerContainer.style.cssText = 'position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;';
               innerContainer.textContent = `${task.start_month}月 - ${task.end_month}月`;
               
-              // 畫出每個月的分隔線
+              // 畫出每個月的分隔線（統一使用細線）
               if (span > 1) {
                 for (let m = 1; m < span; m++) {
-                  const currentMonth = task.start_month + m - 1; // 分隔線左側的月份
-                  const nextMonth = task.start_month + m; // 分隔線右側的月份
                   const divider = document.createElement('div');
                   const leftPercent = (m / span) * 100;
-                  // 只有當分隔線是6月和7月之間時才顯示粗線
-                  const isJunJulBorder = (currentMonth === 6 && nextMonth === 7);
                   divider.style.cssText = `
                     position: absolute;
                     left: ${leftPercent}%;
                     top: 0;
                     bottom: 0;
-                    width: ${isJunJulBorder ? '2px' : '1px'};
+                    width: 1px;
                     background: rgba(255,255,255,0.3);
                   `;
                   innerContainer.appendChild(divider);
@@ -1395,5 +1396,5 @@
       init();
     }
   </script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9a890fda95e14a46',t:'MTc2NDgyNzgwMS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9a89a626b4bc8458',t:'MTc2NDgzMzk1Ny4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
