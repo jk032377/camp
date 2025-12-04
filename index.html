@@ -7,6 +7,8 @@
   <title>專案時間軸管理</title>
   <script src="/_sdk/data_sdk.js" onerror="this.removeAttribute('src')"></script>
   <script src="/_sdk/element_sdk.js" onerror="this.removeAttribute('src')"></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <style>
     body {
       box-sizing: border-box;
@@ -486,7 +488,7 @@
      載入中...
     </div>
     <div class="tasks-grid" id="tasks-grid"></div>
-    <div class="controls"><button class="btn btn-primary" id="add-task-btn">➕ 新增任務</button>
+    <div class="controls"><button class="btn btn-primary" id="add-task-btn">➕ 新增任務</button> <button class="btn" id="share-btn" style="background: #10b981; color: white;">📤 分享時間軸</button>
     </div>
    </div>
   </div>
@@ -517,8 +519,23 @@
    </div>
   </div>
   <div class="delete-confirm" id="delete-confirm">
-   <p>確定要刪除這個任務嗎？</p>
+   <p>確定��刪除這個任務嗎？</p>
    <div class="delete-confirm-actions"><button class="btn" id="cancel-delete" style="background: #6b7280; color: white;">取消</button> <button class="btn btn-danger" id="confirm-delete">刪除</button>
+   </div>
+  </div>
+  <div class="modal" id="share-modal">
+   <div class="modal-content">
+    <h2>分享時間軸</h2>
+    <p style="color: #666; margin-bottom: 25px;">選擇您要下載的格式：</p>
+    <div style="display: flex; flex-direction: column; gap: 15px;"><button class="btn btn-primary" id="download-png" style="display: flex; align-items: center; justify-content: center; gap: 10px;"> <span style="font-size: 24px;">🖼️</span> <span>下載為圖片 (PNG)</span> </button> <button class="btn btn-primary" id="download-pdf" style="display: flex; align-items: center; justify-content: center; gap: 10px;"> <span style="font-size: 24px;">📄</span> <span>下載為 PDF</span> </button>
+    </div>
+    <div class="modal-actions" style="margin-top: 25px;"><button class="btn" onclick="closeShareModal()" style="background: #6b7280; color: white; width: 100%;">取消</button>
+    </div>
+    <div id="download-loading" style="display: none; text-align: center; margin-top: 20px; color: #667eea;">
+     <div style="font-size: 16px;">
+      ⏳ 產生中，請稍候...
+     </div>
+    </div>
    </div>
   </div>
   <script>
@@ -658,6 +675,154 @@
     
     function closeModal() {
       document.getElementById('task-modal').classList.remove('active');
+    }
+    
+    function openShareModal() {
+      if (currentTasks.length === 0) {
+        showToast('目前沒有任務可以分享');
+        return;
+      }
+      document.getElementById('share-modal').classList.add('active');
+    }
+    
+    function closeShareModal() {
+      document.getElementById('share-modal').classList.remove('active');
+      document.getElementById('download-loading').style.display = 'none';
+    }
+    
+    async function downloadAsPNG() {
+      const loadingEl = document.getElementById('download-loading');
+      loadingEl.style.display = 'block';
+      
+      try {
+        // 暫時隱藏控制按鈕和離線提示
+        const controls = document.querySelector('.controls');
+        const offlineNotice = document.getElementById('offline-notice');
+        const originalControlsDisplay = controls.style.display;
+        const originalNoticeDisplay = offlineNotice.style.display;
+        
+        controls.style.display = 'none';
+        offlineNotice.style.display = 'none';
+        
+        // 等待 html2canvas 載入
+        if (typeof html2canvas === 'undefined') {
+          showToast('圖片功能載入中，請稍後再試');
+          loadingEl.style.display = 'none';
+          controls.style.display = originalControlsDisplay;
+          offlineNotice.style.display = originalNoticeDisplay;
+          return;
+        }
+        
+        const timelineWrapper = document.querySelector('.timeline-wrapper');
+        const canvas = await html2canvas(timelineWrapper, {
+          backgroundColor: '#ffffff',
+          scale: 2,
+          logging: false,
+          useCORS: true
+        });
+        
+        // 還原顯示
+        controls.style.display = originalControlsDisplay;
+        offlineNotice.style.display = originalNoticeDisplay;
+        
+        // 下載圖片
+        const imgData = canvas.toDataURL('image/png');
+        const titleText = document.getElementById('timeline-title').textContent;
+        const yearText = document.getElementById('year-label').textContent.replace(' ▼', '');
+        
+        const link = document.createElement('a');
+        link.href = imgData;
+        link.download = `${titleText}_${yearText}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        showToast('圖片已下載！');
+        closeShareModal();
+      } catch (error) {
+        console.error('下載圖片失敗:', error);
+        showToast('下載失敗：' + error.message);
+        loadingEl.style.display = 'none';
+        
+        // 還原顯示（錯誤情況）
+        const controls = document.querySelector('.controls');
+        const offlineNotice = document.getElementById('offline-notice');
+        if (controls) controls.style.display = '';
+        if (offlineNotice) offlineNotice.style.display = '';
+      }
+    }
+    
+    async function downloadAsPDF() {
+      const loadingEl = document.getElementById('download-loading');
+      loadingEl.style.display = 'block';
+      
+      try {
+        // 暫時隱藏控制按鈕和離線提示
+        const controls = document.querySelector('.controls');
+        const offlineNotice = document.getElementById('offline-notice');
+        const originalControlsDisplay = controls.style.display;
+        const originalNoticeDisplay = offlineNotice.style.display;
+        
+        controls.style.display = 'none';
+        offlineNotice.style.display = 'none';
+        
+        // 等待函式庫載入
+        if (typeof html2canvas === 'undefined' || typeof jspdf === 'undefined') {
+          showToast('PDF 功能載入中，請稍後再試');
+          loadingEl.style.display = 'none';
+          controls.style.display = originalControlsDisplay;
+          offlineNotice.style.display = originalNoticeDisplay;
+          return;
+        }
+        
+        const timelineWrapper = document.querySelector('.timeline-wrapper');
+        const canvas = await html2canvas(timelineWrapper, {
+          backgroundColor: '#ffffff',
+          scale: 2,
+          logging: false,
+          useCORS: true
+        });
+        
+        // 還原顯示
+        controls.style.display = originalControlsDisplay;
+        offlineNotice.style.display = originalNoticeDisplay;
+        
+        // 建立 PDF
+        const { jsPDF } = jspdf;
+        const imgData = canvas.toDataURL('image/png');
+        
+        // 計算 PDF 尺寸（A4 橫向）
+        const pdf = new jsPDF('landscape', 'mm', 'a4');
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+        
+        const imgWidth = canvas.width;
+        const imgHeight = canvas.height;
+        const ratio = Math.min(pdfWidth / imgWidth, pdfHeight / imgHeight);
+        
+        const imgX = (pdfWidth - imgWidth * ratio) / 2;
+        const imgY = (pdfHeight - imgHeight * ratio) / 2;
+        
+        pdf.addImage(imgData, 'PNG', imgX, imgY, imgWidth * ratio, imgHeight * ratio);
+        
+        // 下載 PDF
+        const titleText = document.getElementById('timeline-title').textContent;
+        const yearText = document.getElementById('year-label').textContent.replace(' ▼', '');
+        pdf.save(`${titleText}_${yearText}.pdf`);
+        
+        showToast('PDF 已下載！');
+        closeShareModal();
+      } catch (error) {
+        console.error('下載 PDF 失敗:', error);
+        showToast('下載失敗：' + error.message);
+        loadingEl.style.display = 'none';
+        
+        // 還原顯示（錯誤情況）
+        const controls = document.querySelector('.controls');
+        const offlineNotice = document.getElementById('offline-notice');
+        if (controls) controls.style.display = '';
+        if (offlineNotice) offlineNotice.style.display = '';
+      }
     }
     
     async function handleAddTask(e) {
@@ -1069,7 +1234,7 @@
       }
       
       loading.classList.remove('active');
-      showToast('順序已調整');
+      showToast('順序��調���');
     }
     
     const dataHandler = {
@@ -1132,10 +1297,19 @@
       renderColorOptions();
       
       document.getElementById('add-task-btn').addEventListener('click', () => openModal());
+      document.getElementById('share-btn').addEventListener('click', openShareModal);
+      document.getElementById('download-png').addEventListener('click', downloadAsPNG);
+      document.getElementById('download-pdf').addEventListener('click', downloadAsPDF);
       
       document.getElementById('task-modal').addEventListener('click', (e) => {
         if (e.target.id === 'task-modal') {
           closeModal();
+        }
+      });
+      
+      document.getElementById('share-modal').addEventListener('click', (e) => {
+        if (e.target.id === 'share-modal') {
+          closeShareModal();
         }
       });
       
@@ -1150,5 +1324,5 @@
       init();
     }
   </script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9a81aed09611a9af',t:'MTc2NDc1MDQyNi4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9a88634be0614a46',t:'MTc2NDgyMDczMy4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
