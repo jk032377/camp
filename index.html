@@ -462,14 +462,14 @@
  <body>
   <div class="timeline-container">
    <div class="header">
-    <h1 id="timeline-title">專案時��軸</h1>
+    <h1 id="timeline-title">專案時間軸</h1>
     <div class="year" id="year-label" onclick="openYearSelector()">
      2025 ▼
     </div>
    </div>
    <div class="timeline-wrapper">
     <div id="offline-notice" class="offline-notice" style="display:none;">
-     📱 離線��式：資料儲存在瀏覽器���地，重新��理後會��留
+     📱 離線模式：資料儲存在瀏覽器本地，重新整理後會保留
     </div>
     <div class="usage-hint">
      💡 <strong>使用提示：</strong>點擊任務條可編輯，點擊兩下可刪除 | 拖曳任務條可調整時間 | 拖曳任務列可調整順序
@@ -550,7 +550,7 @@
    </div>
   </div>
   <div class="delete-confirm" id="delete-confirm">
-   <p>確�����刪除這個任務嗎？</p>
+   <p>確定要刪除這個任務嗎？</p>
    <div class="delete-confirm-actions"><button class="btn" id="cancel-delete" style="background: #6b7280; color: white;">取消</button> <button class="btn btn-danger" id="confirm-delete">刪除</button>
    </div>
   </div>
@@ -564,7 +564,7 @@
     </div>
     <div id="download-loading" style="display: none; text-align: center; margin-top: 20px; color: #667eea;">
      <div style="font-size: 16px;">
-      ⏳ 產��中，請���候...
+      ⏳ 產生中，請稍候...
      </div>
     </div>
    </div>
@@ -737,7 +737,7 @@
         
         // 等待 html2canvas 載入
         if (typeof html2canvas === 'undefined') {
-          showToast('圖片功能載入中，請��後再試');
+          showToast('圖片功能載入中，請稍後再試');
           loadingEl.style.display = 'none';
           controls.style.display = originalControlsDisplay;
           offlineNotice.style.display = originalNoticeDisplay;
@@ -957,7 +957,7 @@
         
         if (result.isOk) {
           closeModal();
-          showToast('任務已更���');
+          showToast('任務已更新');
         } else {
           showToast('更新失敗，請重試');
         }
@@ -1021,7 +1021,7 @@
         }
         loading.classList.remove('active');
         hideDeleteConfirm();
-        showToast('任���已刪除');
+        showToast('任務已刪除');
       }
     }
     
@@ -1227,7 +1227,7 @@
                 const newEndMonth = newStartMonth + duration;
                 
                 if (newEndMonth > 12) {
-                  showToast('���法移動：結��月份超過12月');
+                  showToast('無法移動：結束月份超過12月');
                   return;
                 }
                 
@@ -1246,7 +1246,7 @@
                   if (result.isOk) {
                     showToast('任務時間已更新');
                   } else {
-                    showToast('更新失敗，請重��');
+                    showToast('更新失敗，請重試');
                   }
                 } else {
                   // 離線模式
@@ -1305,7 +1305,7 @@
       }
       
       loading.classList.remove('active');
-      showToast('順序��調���');
+      showToast('順序已調整');
     }
     
     const dataHandler = {
@@ -1335,7 +1335,7 @@
       if (!window.dataSdk) {
         isOfflineMode = true;
         document.getElementById('offline-notice').style.display = 'block';
-        // ���入離線資��
+        // 載入離線資料
         currentTasks = loadTasksOffline();
         renderTasks(currentTasks);
       } else {
@@ -1395,5 +1395,5 @@
       init();
     }
   </script>
- <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9a8907d8d63d4a46',t:'MTc2NDgyNzQ3My4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9a890fda95e14a46',t:'MTc2NDgyNzgwMS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
